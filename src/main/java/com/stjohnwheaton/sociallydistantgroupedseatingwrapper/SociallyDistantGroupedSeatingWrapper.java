@@ -107,49 +107,55 @@ public void setTimeZone(TimeZone timeZone)
         uriToCall.append(signupId);
         uriToCall.append("/?user_key=");
         uriToCall.append(userKey);
-        
+  
+        getGroupDataFromFile("C:\\Source\\API_TestData.json");
         Client client;
         client = ClientBuilder.newClient();
         name = client.target(uriToCall.toString())
         .request(MediaType.APPLICATION_JSON)
        .get(String.class);
         
-        /* READ DATA FROM FILE */
-        
-//       String filePath = "C:\\Source\\API_Response_humanreadable.txt";
-//       StringBuilder contentBuilder = new StringBuilder();
-// 
-//        try (Stream<String> stream = Files.lines( Paths.get(filePath), StandardCharsets.UTF_8)) 
-//        {
-//            stream.forEach(s -> contentBuilder.append(s).append("\n"));
-//        }
-//        catch (IOException e) 
-//        {
-//            e.printStackTrace();
-//        }
-// 
-//        name = contentBuilder.toString();
-        
-        /* WRITE DATA TO FILE */        
-//        try
-//        {
-//        FileWriter fw = new FileWriter("C:\\Source\\API_Response.txt");
-//        fw.write(name);
-//        fw.flush();
-//        fw.close();
-//        }
-//        catch (IOException e)
-//        {
-//            System.out.println(e.toString());
-//        }
-        
-        //JsonReader stringData = Json.createReader( new StringReader(name));
-        //JsonObject fullData = stringData.readObject();
         parseGroupJson(name);
-        
         
     }
 
+    public void writeGroupDataToFile(String fileNameWithPath, String groupData)
+    {
+        /* WRITE DATA TO FILE */
+        // faster testing by skipping API when working on non-API items
+         try {
+        String filePath = "C:\\Source\\API_TestData.json";
+        
+        Files.writeString(Paths.get(filePath), groupData, StandardCharsets.UTF_8);
+        } catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+    
+    public void getGroupDataFromFile(String fileNameWithPath)
+    {
+        /* READ DATA FROM FILE */
+        // faster testing by skipping API when working on non-API items
+
+        String filePath = fileNameWithPath;
+        StringBuilder contentBuilder = new StringBuilder();
+        String name;
+
+        try (Stream<String> stream = Files.lines(Paths.get(filePath), StandardCharsets.UTF_8))
+        {
+            stream.forEach(s -> contentBuilder.append(s).append("\n"));
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        name = contentBuilder.toString();
+
+        parseGroupJson(name);
+
+    }
+    
     private void parseGroupJson(String jsonString) 
     {
             JsonParser parser = Json.createParser(new StringReader(jsonString));
@@ -395,7 +401,7 @@ public void setTimeZone(TimeZone timeZone)
             }
             SociallyDistantGroupedSeatingArrangement seatingArrangement = new SociallyDistantGroupedSeatingArrangement(sgToFilter.getCopyForSubsets(), srToFilter);
             seatingArrangement.seatAllGroups();
-            int unSeatedGroupsCount = seatingArrangement.getUnSeatedGroups().size();
+        int unSeatedGroupsCount = seatingArrangement.getUnSeatedGroups().size();
             if (unSeatedGroupsCount > 0)
             {
                 
