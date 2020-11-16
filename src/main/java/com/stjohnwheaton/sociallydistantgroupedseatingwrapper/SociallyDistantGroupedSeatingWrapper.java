@@ -5,7 +5,6 @@
  */
 package com.stjohnwheaton.sociallydistantgroupedseatingwrapper;
 
-
 import com.stjohnwheaton.sociallydistantgroupedseating.SeatingGroup;
 import com.stjohnwheaton.sociallydistantgroupedseating.SeatingGroups;
 import com.stjohnwheaton.sociallydistantgroupedseating.SeatingRow;
@@ -37,11 +36,11 @@ import javax.ws.rs.core.MediaType;
 
 /**
  *
- * @author Emilie Yonkers
- *         emilie.yonkers@gmail.com
+ * @author Emilie Yonkers emilie.yonkers@gmail.com
  */
-public class SociallyDistantGroupedSeatingWrapper {
-    
+public class SociallyDistantGroupedSeatingWrapper
+{
+
     private static final String baseApiUri = "https://api.signupgenius.com/v2/k/";
     private static final String getSignupsApiPath = "signups/report/filled/";
     private SociallyDistantGroupedSeatingArrangement seating;
@@ -50,9 +49,8 @@ public class SociallyDistantGroupedSeatingWrapper {
     private LocalDate dateToProcess = null;
     private String outputFilePath;
     TimeZone currentTimeZone;
-    
+
     //private static String userKey = "dTNkQkdKLzhsSVlMMXU2dWg2NTFHZz09"; 
-    
     public SociallyDistantGroupedSeatingWrapper()
     {
         seating = new SociallyDistantGroupedSeatingArrangement();
@@ -60,7 +58,7 @@ public class SociallyDistantGroupedSeatingWrapper {
         seatingRows = new SeatingRows();
         currentTimeZone = TimeZone.getDefault();
     }
-    
+
     public SociallyDistantGroupedSeatingWrapper(int sociallyDistantSeats)
     {
         seating = new SociallyDistantGroupedSeatingArrangement();
@@ -68,71 +66,73 @@ public class SociallyDistantGroupedSeatingWrapper {
         seatingRows = new SeatingRows(sociallyDistantSeats);
         currentTimeZone = TimeZone.getDefault();
     }
-    
+
     public void setEventDate(LocalDate eventDate)
     {
         dateToProcess = eventDate;
     }
-    
+
     public LocalDate getEventDate()
     {
         return dateToProcess;
     }
-    
+
     public void setOutputFilePath(String filePath)
     {
         outputFilePath = filePath;
     }
 
-public SeatingGroups getSeatingGroups()
-{
-    return seatingGroups;
-}
+    public SeatingGroups getSeatingGroups()
+    {
+        return seatingGroups;
+    }
 
-public SeatingRows getSeatingRows()
-{
-    return seatingRows;
-}
+    public SeatingRows getSeatingRows()
+    {
+        return seatingRows;
+    }
 
-public void setTimeZone(TimeZone timeZone)
-{
-    currentTimeZone = timeZone;
-}
+    public void setTimeZone(TimeZone timeZone)
+    {
+        currentTimeZone = timeZone;
+    }
+
     public void getGroupDataFromAPI(String signupId, String userKey)
     {
-        
+
         String name;
         StringBuilder uriToCall = new StringBuilder(baseApiUri);
         uriToCall.append(getSignupsApiPath);
         uriToCall.append(signupId);
         uriToCall.append("/?user_key=");
         uriToCall.append(userKey);
-  
+
         getGroupDataFromFile("C:\\Source\\API_TestData.json");
         Client client;
         client = ClientBuilder.newClient();
         name = client.target(uriToCall.toString())
-        .request(MediaType.APPLICATION_JSON)
-       .get(String.class);
-        
+                .request(MediaType.APPLICATION_JSON)
+                .get(String.class);
+
         parseGroupJson(name);
-        
+
     }
 
     public void writeGroupDataToFile(String fileNameWithPath, String groupData)
     {
         /* WRITE DATA TO FILE */
         // faster testing by skipping API when working on non-API items
-         try {
-        String filePath = "C:\\Source\\API_TestData.json";
-        
-        Files.writeString(Paths.get(filePath), groupData, StandardCharsets.UTF_8);
-        } catch(IOException e)
+        try
+        {
+            String filePath = "C:\\Source\\API_TestData.json";
+
+            Files.writeString(Paths.get(filePath), groupData, StandardCharsets.UTF_8);
+        } catch (IOException e)
         {
             e.printStackTrace();
         }
     }
-    
+
     public void getGroupDataFromFile(String fileNameWithPath)
     {
         /* READ DATA FROM FILE */
@@ -155,28 +155,30 @@ public void setTimeZone(TimeZone timeZone)
         parseGroupJson(name);
 
     }
-    
-    private void parseGroupJson(String jsonString) 
+
+    private void parseGroupJson(String jsonString)
     {
-            JsonParser parser = Json.createParser(new StringReader(jsonString));
-            String keyName="";
-            String value = "";
-            int arrayCount = 0;
-            Hashtable<String, String> currentSeatingGroupInfo = new Hashtable<String, String>();
-            int currentSeatingGroupSize = 0;
-            boolean skipEntry = false;
-        while (parser.hasNext()) {
+        JsonParser parser = Json.createParser(new StringReader(jsonString));
+        String keyName = "";
+        String value = "";
+        int arrayCount = 0;
+        Hashtable<String, String> currentSeatingGroupInfo = new Hashtable<String, String>();
+        int currentSeatingGroupSize = 0;
+        boolean skipEntry = false;
+        while (parser.hasNext())
+        {
             JsonParser.Event event = parser.next();
-            switch (event) {
+            switch (event)
+            {
                 case START_OBJECT:
                     currentSeatingGroupInfo = new Hashtable<String, String>();
                     currentSeatingGroupSize = 0;
                     skipEntry = false;
                     break;
                 case END_OBJECT:
-                    if (currentSeatingGroupInfo.size()>0 && currentSeatingGroupSize > 0 && !skipEntry)
+                    if (currentSeatingGroupInfo.size() > 0 && currentSeatingGroupSize > 0 && !skipEntry)
                     {
-                        SeatingGroup sg = new SeatingGroup(currentSeatingGroupSize,currentSeatingGroupInfo);
+                        SeatingGroup sg = new SeatingGroup(currentSeatingGroupSize, currentSeatingGroupInfo);
                         seatingGroups.add(sg);
 
                         //if (!currentSeatingGroupInfo.containsKey("EventDate") || !currentSeatingGroupInfo.containsKey("EventTime"))
@@ -198,104 +200,105 @@ public void setTimeZone(TimeZone timeZone)
                     keyName = parser.getString();
                     break;
                 case VALUE_FALSE:
-                    currentSeatingGroupInfo.put(keyName,"false");
+                    currentSeatingGroupInfo.put(keyName, "false");
                     break;
                 case VALUE_NULL:
-                    currentSeatingGroupInfo.put(keyName,null);
+                    currentSeatingGroupInfo.put(keyName, null);
                     break;
                 case VALUE_TRUE:
-                    currentSeatingGroupInfo.put(keyName,"true");
+                    currentSeatingGroupInfo.put(keyName, "true");
                     break;
                 case VALUE_STRING:
-                   value = parser.getString();
-                   currentSeatingGroupInfo.put(keyName,value);
-                   
-                   if (keyName.equals("startdatestring"))
-                   {
-                       DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z");
-                       ZonedDateTime entryDateTime, convertedDateTime;
-                       
-                       LocalDateTime localDateTime;
-                       LocalDate entryDate;
-                       LocalTime entryTime;
-                       //Calendar calendar = new GregorianCalendar();
-                       entryDateTime = ZonedDateTime.parse(value,dtf);
-                       convertedDateTime = entryDateTime.withZoneSameInstant(currentTimeZone.toZoneId());
-                       
-                       localDateTime = convertedDateTime.toLocalDateTime(); //LocalDateTime.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
-                       entryDate = localDateTime.toLocalDate();
-                       entryTime = localDateTime.toLocalTime();
-                       if (!entryDate.equals(dateToProcess) && dateToProcess!=null)
-                       {
-                           skipEntry = true;
-                       }
-                       else
-                       {
-                           DateTimeFormatter dtfDateString = DateTimeFormatter.ofPattern("yyyyMMdd");
-                           DateTimeFormatter dtfTimeString = DateTimeFormatter.ofPattern("HHmm");
-                           currentSeatingGroupInfo.put("EventDate",entryDate.format(dtfDateString));
-                           currentSeatingGroupInfo.put("EventTime",entryTime.format(dtfTimeString));
-                       }
-                   }    
-                   break; 
+                    value = parser.getString();
+                    currentSeatingGroupInfo.put(keyName, value);
+
+                    if (keyName.equals("startdatestring"))
+                    {
+                        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z");
+                        ZonedDateTime entryDateTime, convertedDateTime;
+
+                        LocalDateTime localDateTime;
+                        LocalDate entryDate;
+                        LocalTime entryTime;
+                        //Calendar calendar = new GregorianCalendar();
+                        entryDateTime = ZonedDateTime.parse(value, dtf);
+                        convertedDateTime = entryDateTime.withZoneSameInstant(currentTimeZone.toZoneId());
+
+                        localDateTime = convertedDateTime.toLocalDateTime(); //LocalDateTime.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
+                        entryDate = localDateTime.toLocalDate();
+                        entryTime = localDateTime.toLocalTime();
+                        if (!entryDate.equals(dateToProcess) && dateToProcess != null)
+                        {
+                            skipEntry = true;
+                        } else
+                        {
+                            DateTimeFormatter dtfDateString = DateTimeFormatter.ofPattern("yyyyMMdd");
+                            DateTimeFormatter dtfTimeString = DateTimeFormatter.ofPattern("HHmm");
+                            currentSeatingGroupInfo.put("EventDate", entryDate.format(dtfDateString));
+                            currentSeatingGroupInfo.put("EventTime", entryTime.format(dtfTimeString));
+                        }
+                    }
+                    break;
                 case VALUE_NUMBER:
                     value = parser.getString();
-                    currentSeatingGroupInfo.put(keyName,value);
+                    currentSeatingGroupInfo.put(keyName, value);
                     if (keyName.equals("myqty"))
                     {
                         try
                         {
                             currentSeatingGroupSize = Integer.parseInt(value);
-                        } catch (Exception e) {}
+                        } catch (Exception e)
+                        {
+                        }
                     }
                     break;
             }
         }
     }
-  
 
-     public void getRowDataFromFile(String filePath)
+    public void getRowDataFromFile(String filePath)
     {
         String data;
         /* READ DATA FROM FILE */
- 
-       StringBuilder contentBuilder = new StringBuilder();
- 
-        try (Stream<String> stream = Files.lines( Paths.get(filePath), StandardCharsets.UTF_8)) 
+
+        StringBuilder contentBuilder = new StringBuilder();
+
+        try (Stream<String> stream = Files.lines(Paths.get(filePath), StandardCharsets.UTF_8))
         {
             stream.forEach(s -> contentBuilder.append(s).append("\n"));
-        }
-        catch (IOException e) 
+        } catch (IOException e)
         {
             e.printStackTrace();
         }
- 
+
         data = contentBuilder.toString();
-        
+
         //JsonReader stringData = Json.createReader( new StringReader(data));
         //JsonObject fullData = stringData.readObject();
         parseRowJson(data);
-        
+
     }
 
-    private void parseRowJson(String jsonString) 
+    private void parseRowJson(String jsonString)
     {
-            JsonParser parser = Json.createParser(new StringReader(jsonString));
-            String keyName="";
-            String value = "";
-            int arrayCount = 0;
-            Hashtable<String, String> currentSeatingRowInfo = new Hashtable<String, String>();
-            int currentSeatingRowSize = 0;
-            int currentRowsFromFront = 1;
-        while (parser.hasNext()) {
+        JsonParser parser = Json.createParser(new StringReader(jsonString));
+        String keyName = "";
+        String value = "";
+        int arrayCount = 0;
+        Hashtable<String, String> currentSeatingRowInfo = new Hashtable<String, String>();
+        int currentSeatingRowSize = 0;
+        int currentRowsFromFront = 1;
+        while (parser.hasNext())
+        {
             JsonParser.Event event = parser.next();
-            switch (event) {
+            switch (event)
+            {
                 case START_OBJECT:
                     currentSeatingRowInfo = new Hashtable<String, String>();
-                    currentSeatingRowSize=0;
+                    currentSeatingRowSize = 0;
                     break;
                 case END_OBJECT:
-                    if (currentSeatingRowInfo.size()>0 && currentSeatingRowSize > 0)
+                    if (currentSeatingRowInfo.size() > 0 && currentSeatingRowSize > 0)
                     {
                         SeatingRow sr = new SeatingRow().setSize(currentSeatingRowSize).setInfo(currentSeatingRowInfo).setDistanceFromFront(currentRowsFromFront);
                         seatingRows.add(sr);
@@ -315,38 +318,42 @@ public void setTimeZone(TimeZone timeZone)
                     keyName = parser.getString();
                     break;
                 case VALUE_FALSE:
-                    currentSeatingRowInfo.put(keyName,"false");
+                    currentSeatingRowInfo.put(keyName, "false");
                     break;
                 case VALUE_NULL:
-                    currentSeatingRowInfo.put(keyName,null);
+                    currentSeatingRowInfo.put(keyName, null);
                     break;
                 case VALUE_TRUE:
-                    currentSeatingRowInfo.put(keyName,"true");
+                    currentSeatingRowInfo.put(keyName, "true");
                     break;
                 case VALUE_STRING:
                 case VALUE_NUMBER:
                     value = parser.getString();
-                    currentSeatingRowInfo.put(keyName,value);
+                    currentSeatingRowInfo.put(keyName, value);
                     if (keyName.equals("RowNumber"))
                     {
                         try
                         {
                             currentRowsFromFront = Integer.parseInt(value);
-                        } catch (Exception e) {}
+                        } catch (Exception e)
+                        {
+                        }
                     }
                     if (keyName.equals("NumberSeats"))
                     {
                         try
                         {
                             currentSeatingRowSize = Integer.parseInt(value);
-                        } catch (Exception e) {}
+                        } catch (Exception e)
+                        {
+                        }
                     }
-                    
+
                     break;
             }
         }
     }
-    
+
     public String SeatGroups()
     {
         String currentEventDate = "";
@@ -364,6 +371,11 @@ public void setTimeZone(TimeZone timeZone)
         String[] eventDateTime;
         ArrayList<String[]> eventDateTimesProcessed = new ArrayList();
 
+        if (sgToSeat.getGroups().size() == 0)
+        {
+            unSeatedGroups.append("No groups found to seat.");
+            unSeatedGroups.append("\r\n");
+        }
         while (sgToSeat.getGroups().size() > 0)
         {
 
@@ -395,46 +407,56 @@ public void setTimeZone(TimeZone timeZone)
                     dailyEventCount += 1;
 
                     filterSeatingRows(srToFilter, "IncludeInArrangements", String.valueOf(dailyEventCount));
+                    if (srToFilter.size() == 0)
+                    {
+                        unSeatedGroups.append("No rows available to set for event at ");
+                        unSeatedGroups.append(currentEventTime);
+                        unSeatedGroups.append("\r\n");
+                    }
                 } else
-                {// shouldn't happen with this data set
-                }
-            }
-            SociallyDistantGroupedSeatingArrangement seatingArrangement = new SociallyDistantGroupedSeatingArrangement(sgToFilter.getCopyForSubsets(), srToFilter);
-            seatingArrangement.seatAllGroups();
-        int unSeatedGroupsCount = seatingArrangement.getUnSeatedGroups().size();
-            if (unSeatedGroupsCount > 0)
-            {
-                
-                unSeatedGroups.append(unSeatedGroupsCount);
-                if (unSeatedGroupsCount>1)
                 {
-                    unSeatedGroups.append(" unseated groups for event at ");
+                    unSeatedGroups.append("No event time found to process seating.");
+                    unSeatedGroups.append("\r\n");
                 }
-                else
+                SociallyDistantGroupedSeatingArrangement seatingArrangement = new SociallyDistantGroupedSeatingArrangement(sgToFilter.getCopyForSubsets(), srToFilter);
+                seatingArrangement.seatAllGroups();
+                int unSeatedGroupsCount = seatingArrangement.getUnSeatedGroups().size();
+                if (unSeatedGroupsCount > 0)
                 {
-                    unSeatedGroups.append(" unseated group for event at ");
+
+                    unSeatedGroups.append(unSeatedGroupsCount);
+                    if (unSeatedGroupsCount > 1)
+                    {
+                        unSeatedGroups.append(" unseated groups for event at ");
+                    } else
+                    {
+                        unSeatedGroups.append(" unseated group for event at ");
+                    }
+                    unSeatedGroups.append(currentEventTime);
+                    unSeatedGroups.append("\r\n");
                 }
-                unSeatedGroups.append(currentEventTime);
-                unSeatedGroups.append("\r\n");
+                if (!writeSeatingGroupsFile(seatingArrangement))
+                {
+                    fileWritingIssue.append("Problem writing file for event at ");
+                    fileWritingIssue.append(currentEventTime);
+                    fileWritingIssue.append("\r\n");
+                }
+                sgToSeat.removeAll(sgToFilter);
             }
-            if (!writeSeatingGroupsFile(seatingArrangement))
-            {                
-                fileWritingIssue.append("Problem writing file for event at ");
-                fileWritingIssue.append(currentEventTime);
-                fileWritingIssue.append("\r\n");
-            }
-            sgToSeat.removeAll(sgToFilter);
         }
+
         return fileWritingIssue.toString() + unSeatedGroups.toString();
     }
 
-    private void filterSeatingGroups(SeatingGroups sg, String infoKey, String infoValue) {
+    private void filterSeatingGroups(SeatingGroups sg, String infoKey, String infoValue)
+    {
         Predicate<SeatingGroup> infoValueFilter;
         infoValueFilter = i -> (i.getGroupInfo().get(infoKey).toString().equals(infoValue));
         sg.removeIf(infoValueFilter.negate());
     }
 
-    private void filterSeatingRows(SeatingRows sr, String infoKey, String infoValue) {
+    private void filterSeatingRows(SeatingRows sr, String infoKey, String infoValue)
+    {
         Predicate<SeatingRow> infoValueFilter;
         infoValueFilter = i -> (((String) i.getInfo().get(infoKey)).contains(infoValue));
         sr.removeIf(infoValueFilter.negate());
@@ -444,7 +466,7 @@ public void setTimeZone(TimeZone timeZone)
     {
         eventDateTimesProcessed.forEach(i -> filterSeatingGroupsAlreadyProcessedEvent(sgToFilter, i));
     }
-    
+
     private void filterSeatingGroupsAlreadyProcessedEvent(SeatingGroups sgToFilter, String[] eventDateTimeProcessed)
     {
         Predicate<SeatingGroup> eventDateFilter, eventTimeFilter;
@@ -452,8 +474,9 @@ public void setTimeZone(TimeZone timeZone)
         eventTimeFilter = i -> (((String) i.getGroupInfo().get("EventTime")).contains(eventDateTimeProcessed[1]));
         sgToFilter.removeIf(eventDateFilter.and(eventTimeFilter));
     }
-    
-    private boolean writeSeatingGroupsFile(SociallyDistantGroupedSeatingArrangement seatingArrangement) {
+
+    private boolean writeSeatingGroupsFile(SociallyDistantGroupedSeatingArrangement seatingArrangement)
+    {
         String filePath, fileName;
         StringBuilder sb = new StringBuilder();
         ArrayList<SeatingGroup> seatedGroups, unSeatedGroups;
@@ -470,14 +493,16 @@ public void setTimeZone(TimeZone timeZone)
         Collections.sort(seatedGroups, seatingArrangement.groupStringComparator);
         Collections.sort(unSeatedGroups, seatingArrangement.groupStringComparator);
 
-        try {
+        try
+        {
             File fileOutput = new File(Paths.get(outputFilePath, fileName).toUri());
 
             FileWriter fileWriter = new FileWriter(fileOutput);
 
             fileWriter.write("Family Name, First Name, Family Size, Pew #, Seats, Sign Up Comment\r\n");
 
-            for (int i = 0; i < seatedGroups.size(); i++) {
+            for (int i = 0; i < seatedGroups.size(); i++)
+            {
                 sb = new StringBuilder();
                 sb.append(seatedGroups.get(i).getGroupInfo().get("lastname").toString());
                 sb.append(",");
@@ -494,11 +519,13 @@ public void setTimeZone(TimeZone timeZone)
                 fileWriter.write(sb.toString());
                 fileWriter.write("\r\n");
             }
-            if (unSeatedGroups.size() > 0) {
+            if (unSeatedGroups.size() > 0)
+            {
                 fileWriter.write("\r\n\r\n\r\n\r\n\r\n");
 
                 fileWriter.write("Unseated Families\r\nFamily Name, First Name, Family Size, Sign Up Comment\r\n");
-                for (int i = 0; i < unSeatedGroups.size(); i++) {
+                for (int i = 0; i < unSeatedGroups.size(); i++)
+                {
                     sb = new StringBuilder();
                     sb.append(unSeatedGroups.get(i).getGroupInfo().get("lastname").toString());
                     sb.append(",");
@@ -515,19 +542,11 @@ public void setTimeZone(TimeZone timeZone)
             //fileWriter.flush();
             fileWriter.close();
             returnValue = true;
-        } catch (IOException e) {
+        } catch (IOException e)
+        {
             e.printStackTrace();
         }
         return returnValue;
     }
 
-
-        
 }
-//        private static void printKey(String key) {
-//            System.out.print(key + ": ");
-//        }
-//
-//        private static void printValue(String x) {
-//            System.out.println(x);
-//        }

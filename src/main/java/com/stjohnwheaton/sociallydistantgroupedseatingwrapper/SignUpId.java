@@ -79,6 +79,145 @@ public class SignUpId extends javax.swing.JFrame {
         startForm.setVisible(true);
 
     }
+        
+                // try to read config info to pre-fill the form
+    private static void getConfigDataFromFile(SignUpId formToFill)
+    {
+        String data;
+        /* READ DATA FROM FILE */
+ 
+       StringBuilder contentBuilder = new StringBuilder();
+       Path filePath = Paths.get("./data/SociallyDistantGroupSeatingWrapperConfig.json");
+ 
+        try (Stream<String> stream = Files.lines( filePath , StandardCharsets.UTF_8)) 
+        {
+            stream.forEach(s -> contentBuilder.append(s).append("\n"));
+        }
+        catch (IOException e) 
+        {
+            e.printStackTrace();
+        }
+ 
+        data = contentBuilder.toString();
+        
+        //JsonReader stringData = Json.createReader( new StringReader(data));
+        //JsonObject fullData = stringData.readObject();
+        parseConfigJson(formToFill, data);
+        
+    }
+
+    private static void parseConfigJson(SignUpId formToFill, String jsonString) 
+    {
+            JsonParser parser = Json.createParser(new StringReader(jsonString));
+            String keyName="";
+            String value = "";
+        while (parser.hasNext()) {
+            JsonParser.Event event = parser.next();
+            switch (event) {
+                case KEY_NAME:
+                    keyName = parser.getString();
+                    break;
+                case VALUE_STRING:
+                case VALUE_NUMBER:
+                    value = parser.getString();
+                    switch (keyName)
+                    {
+                        case "signupid":
+                            formToFill.txtSignUpId.setText(value);
+                            break;
+                        case "apikey":
+                            formToFill.txtApiKey.setText(value);
+                            break;
+                        case "rowfile":
+                            formToFill.txtFilePath.setText(value);
+                            break;
+                        case "outputfilelocation":
+                            formToFill.txtOutputFilePath.setText(value);
+                            break;
+                        case "socialdistanceseats":
+                            formToFill.txtSocialDistanceSeats.setText(value);
+                            break;
+                    }
+                            
+                    break;
+                case START_OBJECT:
+                case END_OBJECT:
+                    break;
+                case START_ARRAY:
+                case END_ARRAY:
+                case VALUE_FALSE:
+                case VALUE_NULL:
+                case VALUE_TRUE:
+                    break;
+            }
+        }
+    }//GEN-LAST:event_txtEventDateComponentShown
+
+    private void txtOutputFilePathActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtOutputFilePathActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtOutputFilePathActionPerformed
+
+    private void processSeating() {
+        try {
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+            LocalDate eventDate = LocalDate.parse(txtEventDate.getText(), dtf);
+            String seatingMessage;
+        
+            if (txtFilePath.getText().isBlank() || txtOutputFilePath.getText().isBlank()
+                    || txtOutputFilePath.getText().isBlank()) {
+                MessageDisplay 
+                missingInputWindow = new MessageDisplay(this,false);          
+                missingInputWindow.setText("Error", "Please complete the missing fields", "OK", null);
+                missingInputWindow.pack();
+                missingInputWindow.setVisible(true);
+            } else
+            {
+                SociallyDistantGroupedSeatingWrapper sc = new SociallyDistantGroupedSeatingWrapper(Integer.parseInt(txtSocialDistanceSeats.getText()));
+                sc.setEventDate(eventDate);
+                if (txtApiKey.getText().isBlank() || txtSignUpId.getText().isBlank())
+                {
+                    sc.getGroupDataFromFile(".//data//GroupData.json");
+                }
+                else
+                {
+                    sc.getGroupDataFromAPI(txtSignUpId.getText(), txtApiKey.getText());
+                }
+                sc.getRowDataFromFile(txtFilePath.getText());
+                sc.setOutputFilePath(txtOutputFilePath.getText());
+                seatingMessage = sc.SeatGroups();
+                if (seatingMessage.isEmpty())
+                {
+                    MessageDisplay successWindow = new MessageDisplay(this, false);
+                    successWindow.setText("Success", "Seating Files written successfully", "OK", null);
+                    successWindow.pack();
+                    successWindow.setVisible(true);   
+                }
+                else
+                {
+                    MessageDisplay partialSuccessWindow = new MessageDisplay(this, false);
+                    partialSuccessWindow.setText("Partial Success", "One or more families were not seated\r\n OR there was an issue writing the seating files", "OK", seatingMessage);
+                    partialSuccessWindow.pack();
+                    partialSuccessWindow.setVisible(true);   
+                }                    
+                
+            }
+        } catch (Exception e) {
+            MessageDisplay errorWindow = new MessageDisplay(this,false);
+            StringBuilder sb = new StringBuilder();
+            StackTraceElement[] ste = e.getStackTrace();
+            for (int i=0;i<ste.length; i++)
+            {
+                sb.append(ste[i].toString());
+                sb.append("\r\n");
+            }
+            
+            errorWindow.setText("Error", e.getMessage(), "OK", sb.toString());
+            errorWindow.pack();
+            errorWindow.setVisible(true);
+            
+            
+        }
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -117,13 +256,6 @@ public class SignUpId extends javax.swing.JFrame {
 
         btnFileBrowseOutput.setText("Browse...");
         btnFileBrowseOutput.setNextFocusableComponent(btnSubmit);
-        btnFileBrowseOutput.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                btnFileBrowseOutputActionPerformed(evt);
-            }
-        });
 
         lblApiKey.setText("API Key / User Key");
 
@@ -132,22 +264,8 @@ public class SignUpId extends javax.swing.JFrame {
         txtApiKey.setNextFocusableComponent(txtFilePath);
         txtApiKey.setPreferredSize(new java.awt.Dimension(120, 20));
         txtApiKey.setRequestFocusEnabled(false);
-        txtApiKey.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                txtApiKeyActionPerformed(evt);
-            }
-        });
 
         txtEventDate.setNextFocusableComponent(lblSocialDistanceSeats);
-        txtEventDate.addComponentListener(new java.awt.event.ComponentAdapter()
-        {
-            public void componentShown(java.awt.event.ComponentEvent evt)
-            {
-                txtEventDateComponentShown(evt);
-            }
-        });
 
         lblFamilyInfo.setText("Family Info (SignUpGenius)");
         lblFamilyInfo.setAlignmentX(1.0F);
@@ -174,13 +292,6 @@ public class SignUpId extends javax.swing.JFrame {
         });
 
         txtFilePath.setNextFocusableComponent(btnFileBrowse);
-        txtFilePath.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                txtFilePathActionPerformed(evt);
-            }
-        });
 
         txtSignUpId.setFocusCycleRoot(true);
         txtSignUpId.setNextFocusableComponent(txtApiKey);
@@ -190,13 +301,6 @@ public class SignUpId extends javax.swing.JFrame {
         lblOutputPath.setText("Output File Location (path only):");
 
         txtOutputFilePath.setNextFocusableComponent(btnFileBrowseOutput);
-        txtOutputFilePath.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                txtOutputFilePathActionPerformed(evt);
-            }
-        });
 
         btnSubmit.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         btnSubmit.setText("Run");
@@ -290,8 +394,8 @@ public class SignUpId extends javax.swing.JFrame {
                             .addComponent(lblEventDate)
                             .addComponent(txtEventDate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(18, 18, 18)
-                        .addGroup(pnlMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(lblSocialDistanceSeats)
+                        .addGroup(pnlMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(lblSocialDistanceSeats, javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(txtSocialDistanceSeats, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(25, 25, 25)
                         .addComponent(lblOutputPath)
@@ -336,187 +440,21 @@ public class SignUpId extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSubmitMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSubmitMouseClicked
-        // TODO add your handling code here:
-        if (txtApiKey.getText() == "" || txtSignUpId.getText() == "")
-        {
-            // add error message
-        }
-        else
-        {
             processSeating();
-        }
     }//GEN-LAST:event_btnSubmitMouseClicked
 
     private void btnSubmitKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_btnSubmitKeyReleased
-        // TODO add your handling code here:
-                if (txtApiKey.getText() == "" || txtSignUpId.getText() == "")
-        {
-            // add error message
-        }
-        else
-        {
             processSeating();
-
-        }
     }//GEN-LAST:event_btnSubmitKeyReleased
 
-    private void txtApiKeyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtApiKeyActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtApiKeyActionPerformed
-
-    private void btnFileBrowseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFileBrowseActionPerformed
-        // TODO add your handling code here:
+    private void btnFileBrowseActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnFileBrowseActionPerformed
+    {//GEN-HEADEREND:event_btnFileBrowseActionPerformed
         if (jFileChooser1.showDialog(this,"Choose the file for Pew Data")>0)
         {
             txtFilePath.setText(jFileChooser1.getSelectedFile().getName());
         }
     }//GEN-LAST:event_btnFileBrowseActionPerformed
 
-    private void btnFileBrowseOutputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFileBrowseOutputActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btnFileBrowseOutputActionPerformed
-
-    private void txtFilePathActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtFilePathActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtFilePathActionPerformed
-
-    private void txtEventDateComponentShown(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_txtEventDateComponentShown
-        // TODO add your handling code here:
-
-    }
-        // try to read config info to pre-fill the form
-    private static void getConfigDataFromFile(SignUpId formToFill)
-    {
-        String data;
-        /* READ DATA FROM FILE */
- 
-       StringBuilder contentBuilder = new StringBuilder();
-       Path filePath = Paths.get("./SociallyDistantGroupSeatingWrapperConfig.json");
- 
-        try (Stream<String> stream = Files.lines( filePath , StandardCharsets.UTF_8)) 
-        {
-            stream.forEach(s -> contentBuilder.append(s).append("\n"));
-        }
-        catch (IOException e) 
-        {
-            e.printStackTrace();
-        }
- 
-        data = contentBuilder.toString();
-        
-        //JsonReader stringData = Json.createReader( new StringReader(data));
-        //JsonObject fullData = stringData.readObject();
-        parseConfigJson(formToFill, data);
-        
-    }
-
-    private static void parseConfigJson(SignUpId formToFill, String jsonString) 
-    {
-            JsonParser parser = Json.createParser(new StringReader(jsonString));
-            String keyName="";
-            String value = "";
-        while (parser.hasNext()) {
-            JsonParser.Event event = parser.next();
-            switch (event) {
-                case KEY_NAME:
-                    keyName = parser.getString();
-                    break;
-                case VALUE_STRING:
-                case VALUE_NUMBER:
-                    value = parser.getString();
-                    switch (keyName)
-                    {
-                        case "signupid":
-                            formToFill.txtSignUpId.setText(value);
-                            break;
-                        case "apikey":
-                            formToFill.txtApiKey.setText(value);
-                            break;
-                        case "pewfile":
-                            formToFill.txtFilePath.setText(value);
-                            break;
-                        case "outputfilelocation":
-                            formToFill.txtOutputFilePath.setText(value);
-                            break;
-                        case "socialdistanceseats":
-                            formToFill.txtSocialDistanceSeats.setText(value);
-                            break;
-                    }
-                            
-                    break;
-                case START_OBJECT:
-                case END_OBJECT:
-                    break;
-                case START_ARRAY:
-                case END_ARRAY:
-                case VALUE_FALSE:
-                case VALUE_NULL:
-                case VALUE_TRUE:
-                    break;
-            }
-        }
-    }//GEN-LAST:event_txtEventDateComponentShown
-
-    private void txtOutputFilePathActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtOutputFilePathActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtOutputFilePathActionPerformed
-
-    private void processSeating() {
-        try {
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-            LocalDate eventDate = LocalDate.parse(txtEventDate.getText(), dtf);
-            String seatingMessage;
-        
-            if (txtApiKey.getText().isBlank() || txtSignUpId.getText().isBlank()
-                    || txtFilePath.getText().isBlank() || txtOutputFilePath.getText().isBlank()
-                    || txtOutputFilePath.getText().isBlank()) {
-                MessageDisplay 
-                missingInputWindow = new MessageDisplay(this,false);          
-                missingInputWindow.setText("Error", "Please complete the missing fields", "OK", null);
-                missingInputWindow.pack();
-                missingInputWindow.setVisible(true);
-            } else
-            {
-                SociallyDistantGroupedSeatingWrapper sc = new SociallyDistantGroupedSeatingWrapper(Integer.parseInt(txtSocialDistanceSeats.getText()));
-                sc.setEventDate(eventDate);
-                sc.getGroupDataFromAPI(txtSignUpId.getText(), txtApiKey.getText());
-                sc.getRowDataFromFile(txtFilePath.getText());
-                sc.setOutputFilePath(txtOutputFilePath.getText());
-                seatingMessage = sc.SeatGroups();
-                if (seatingMessage.isEmpty())
-                {
-                    MessageDisplay successWindow = new MessageDisplay(this, false);
-                    successWindow.setText("Success", "Seating Files written successfully", "OK", null);
-                    successWindow.pack();
-                    successWindow.setVisible(true);   
-                }
-                else
-                {
-                    MessageDisplay partialSuccessWindow = new MessageDisplay(this, false);
-                    partialSuccessWindow.setText("Partial Success", "One or more families were not seated\r\n OR there was an issue writing the seating files", "OK", seatingMessage);
-                    partialSuccessWindow.pack();
-                    partialSuccessWindow.setVisible(true);   
-                }                    
-                
-            }
-        } catch (Exception e) {
-            MessageDisplay errorWindow = new MessageDisplay(this,false);
-            StringBuilder sb = new StringBuilder();
-            StackTraceElement[] ste = e.getStackTrace();
-            for (int i=0;i<ste.length; i++)
-            {
-                sb.append(ste[i].toString());
-                sb.append("\r\n");
-            }
-            
-            errorWindow.setText("Error", e.getMessage(), "OK", sb.toString());
-            errorWindow.pack();
-            errorWindow.setVisible(true);
-            
-            
-        }
-    }
-    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private static javax.swing.JButton btnFileBrowse;
     private static javax.swing.JButton btnFileBrowseOutput;
