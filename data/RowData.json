@@ -1,0 +1,15 @@
+{"rows":[
+	{"PewNumber":1,
+	 "RowNumber":2,
+	 "NumberSeats":4,
+	 "IncludeInArrangements": "1,3"},
+	{"PewNumber":4,
+	 "RowNumber":1,
+	 "NumberSeats":2,
+	 "IncludeInArrangements": "1,3"},
+	{"PewNumber":5,
+	 "RowNumber":3,
+	 "NumberSeats":1,
+	 "IncludeInArrangements": "1,3"}
+	]
+}
